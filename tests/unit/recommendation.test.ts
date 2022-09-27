@@ -63,3 +63,47 @@ describe('POST /recommendations/:id/upvote', () => {
     })
 })
 
+
+describe('POST /recommendations/:id/downvote', () => {
+    it('should decrease one to recommendation score', async () => {
+        const recommendation = recommendationFactory.createRecommendation()
+        const EXPECTED_SCORE = -1
+
+        jest.spyOn(recommendationRepository, 'find').mockResolvedValueOnce(recommendation)
+        jest.spyOn(recommendationRepository, 'updateScore').mockResolvedValueOnce(recommendation)
+
+        await expect(recommendationService.downvote(recommendation.id)).resolves.not.toThrow()
+
+        expect(recommendationRepository.find).toHaveBeenCalledWith(recommendation.id)
+        expect(recommendationRepository.updateScore).toHaveBeenCalledWith(recommendation.id, 'decrement')
+        expect(recommendation.score).toBeGreaterThan(EXPECTED_SCORE)
+    })
+
+    it('should not find recommendation id', async () => {
+        let id = -1;
+        jest.spyOn(recommendationRepository, 'find').mockResolvedValueOnce(null)
+
+        await expect(recommendationService.downvote(id)).rejects.toEqual(notFoundError())
+
+        expect(recommendationRepository.find).toHaveBeenCalledWith(id)
+        expect(recommendationRepository.updateScore).not.toHaveBeenCalled()
+    })
+
+    it('should delete a recommendation with score less than -5', async () => {
+        const recommendation = recommendationFactory.createRecommendation()
+        const EXPECTED_SCORE = -5
+        recommendation.score = -10
+
+        jest.spyOn(recommendationRepository, 'find').mockResolvedValueOnce(recommendation)
+        jest.spyOn(recommendationRepository, 'updateScore').mockResolvedValueOnce(recommendation)
+        jest.spyOn(recommendationRepository, 'remove').mockResolvedValueOnce()
+
+        await expect(recommendationService.downvote(recommendation.id)).resolves.not.toThrow()
+
+        expect(recommendationRepository.find).toHaveBeenCalledWith(recommendation.id)
+        expect(recommendationRepository.updateScore).toHaveBeenCalledWith(recommendation.id, 'decrement')
+        expect(recommendation.score).toBeLessThan(EXPECTED_SCORE)
+        expect(recommendationRepository.remove).toHaveBeenCalledWith(recommendation.id)
+    })
+})
+
