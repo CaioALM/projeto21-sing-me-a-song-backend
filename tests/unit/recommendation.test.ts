@@ -8,7 +8,7 @@ beforeEach(() => {
     jest.clearAllMocks()
 })
 
-describe('POST /recommendations', () => {
+describe('Testing POST /recommendations', () => {
     it('should create recommendation', async () => {
         const recommendation = recommendationFactory.createRecommendation()
 
@@ -37,7 +37,7 @@ describe('POST /recommendations', () => {
     })
 })
 
-describe('POST /recommendations/:id/upvote', () => {
+describe('Testing POST /recommendations/:id/upvote', () => {
     it('should increase one to recommendation score', async () => {
         const recommendation = recommendationFactory.createRecommendation()
         const EXPECTED_SCORE = 1
@@ -63,8 +63,7 @@ describe('POST /recommendations/:id/upvote', () => {
     })
 })
 
-
-describe('POST /recommendations/:id/downvote', () => {
+describe('Testing POST /recommendations/:id/downvote', () => {
     it('should decrease one to recommendation score', async () => {
         const recommendation = recommendationFactory.createRecommendation()
         const EXPECTED_SCORE = -1
@@ -104,6 +103,29 @@ describe('POST /recommendations/:id/downvote', () => {
         expect(recommendationRepository.updateScore).toHaveBeenCalledWith(recommendation.id, 'decrement')
         expect(recommendation.score).toBeLessThan(EXPECTED_SCORE)
         expect(recommendationRepository.remove).toHaveBeenCalledWith(recommendation.id)
+    })
+})
+
+describe('Testing GET /recommendations/:id', () => {
+    it('should found an id and return recommendation correctly', async () => {
+        const recommendation = recommendationFactory.createRecommendation()
+
+        jest.spyOn(recommendationRepository, 'find').mockResolvedValueOnce(recommendation)
+
+        const findRecommendation = await recommendationService.getById(recommendation.id)
+
+        expect(findRecommendation).toEqual(recommendation)
+        expect(recommendationRepository.find).toHaveBeenCalledWith(recommendation.id)
+     
+    })
+
+    it('should not found id and throw not found error', async () => {
+        const recommendation = recommendationFactory.createRecommendation()
+
+        jest.spyOn(recommendationRepository, 'find').mockResolvedValueOnce(null)
+
+        await expect(recommendationService.getById(recommendation.id)).rejects.toEqual(notFoundError())
+        expect(recommendationRepository.find).toHaveBeenCalledWith(recommendation.id)
     })
 })
 
