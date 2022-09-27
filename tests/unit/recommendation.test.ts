@@ -37,3 +37,29 @@ describe('POST /recommendations', () => {
     })
 })
 
+describe('POST /recommendations/:id/upvote', () => {
+    it('should increase one to recommendation score', async () => {
+        const recommendation = recommendationFactory.createRecommendation()
+        const EXPECTED_SCORE = 1
+
+        jest.spyOn(recommendationRepository, 'find').mockResolvedValueOnce(recommendation)
+        jest.spyOn(recommendationRepository, 'updateScore').mockResolvedValueOnce(recommendation)
+
+        await expect(recommendationService.upvote(recommendation.id)).resolves.not.toThrow()
+
+        expect(recommendationRepository.find).toHaveBeenCalledWith(recommendation.id)
+        expect(recommendationRepository.updateScore).toHaveBeenCalledWith(recommendation.id, 'increment')
+        expect(recommendation.score).toBeLessThan(EXPECTED_SCORE)
+    })
+
+    it('should return not found by recommendation id', async () => {
+        const id = -1;
+        jest.spyOn(recommendationRepository, 'find').mockResolvedValueOnce(null)
+
+        await expect(recommendationService.upvote(id)).rejects.toEqual(notFoundError())
+
+        expect(recommendationRepository.find).toHaveBeenCalledWith(id)
+        expect(recommendationRepository.updateScore).not.toHaveBeenCalled()
+    })
+})
+
